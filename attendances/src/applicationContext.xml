@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd" xmlns:tx="http://www.springframework.org/schema/tx">
+
+<!-- 数据池 -->
+<bean id="jdbc" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+<property name="locations" value="classpath:jdbc.properties"></property>
+</bean>
+	<bean id="dataSource"
+	destroy-method="close"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="${jdbc.driverClassName}"></property>
+		<property name="username" value="${jdbc.username}"></property>
+		<property name="url" value="${jdbc.url}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean> 
+	
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.MySQLDialect
+				</prop>
+				<prop key="hibernate.show_sql">false</prop><!-- 是否展示SQL -->
+                <prop key="hibernate.hbm2ddl.auto">update</prop><!-- 是否自动创建表结构 -->
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.connection.autocommit">true</prop>
+			</props>
+		</property>
+		<property name="mappingResources">
+			<list>
+				<value>com/gxuwz/attend/entity/Admin.hbm.xml</value>
+				<value>
+					com/gxuwz/attend/entity/Attendance.hbm.xml
+				</value>
+				<value>com/gxuwz/attend/entity/Classes.hbm.xml</value>
+				<value>com/gxuwz/attend/entity/Course.hbm.xml</value>
+				<value>
+					com/gxuwz/attend/entity/Department.hbm.xml
+				</value>
+				<value>com/gxuwz/attend/entity/Sheet.hbm.xml</value>
+				<value>com/gxuwz/attend/entity/Student.hbm.xml</value>
+				<value>com/gxuwz/attend/entity/Teacher.hbm.xml</value></list>
+		</property></bean>
+		<!-- DAO -->
+	<bean id="baseDAO" class="com.gxuwz.attend.dao.BaseDao" abstract="true">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory"/>
+		</property>
+	</bean>	
+	
+	<bean id="loginDao" class="com.gxuwz.attend.dao.LoginDaoimp" parent="baseDAO">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory"/>
+		</property>
+	</bean>
+		<bean id="attendanceDao" class="com.gxuwz.attend.dao.AttendanceDaoimp" parent="baseDAO">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory"/>
+		</property>
+	</bean>
+		<bean id="courseDao" class="com.gxuwz.attend.dao.CourseDaoimp" parent="baseDAO">
+		<property name="sessionFactory">
+			<ref bean="sessionFactory"/>
+		</property>
+	</bean>
+	
+		<!-- Service -->
+		<bean id="loginService" class="com.gxuwz.attend.service.LoginServiceimp">		
+		<property name="loginDao">
+			<ref bean="loginDao"/>
+		</property>
+	</bean>
+			<bean id="attendanceService" class="com.gxuwz.attend.service.AttendanceServiceimp">		
+		<property name="attendanceDao">
+			<ref bean="attendanceDao"/>
+		</property>
+	</bean>
+			<bean id="courseService" class="com.gxuwz.attend.service.CourseServiceimp">		
+		<property name="courseDao">
+			<ref bean="courseDao"/>
+		</property>
+	</bean>
+		 <!-- Action -->
+    <bean id="loginAction" class="com.gxuwz.attend.action.LoginAction">
+        <property name="loginService" ref="loginService"/>
+    </bean>
+		
+	 <bean id="courseAction" class="com.gxuwz.attend.action.CourseAction">
+        <property name="courseService" ref="courseService"/>
+    </bean>
+    
+    	 <bean id="jsonAction" class="com.gxuwz.attend.action.JsonAction">
+        <property name="courseService" ref="courseService"/>
+    </bean>
+    
+        <bean id="attendanceAction" class="com.gxuwz.attend.action.AttendenceAction">
+        <property name="attendanceService" ref="attendanceService"/>
+    </bean>
+		<!--事务  -->
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" /></beans>
